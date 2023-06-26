@@ -1,18 +1,23 @@
 package com.sandeepprabhakula.blogging.service;
 
+import com.mongodb.client.AggregateIterable;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 import com.sandeepprabhakula.blogging.data.Blog;
 import com.sandeepprabhakula.blogging.data.User;
 import com.sandeepprabhakula.blogging.repository.BlogRepository;
 import com.sandeepprabhakula.blogging.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.bson.Document;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.convert.MongoConverter;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +27,9 @@ public class BlogService {
 
     private final UserRepository userRepository;
 
+    private final MongoClient mongoClient;
+
+    private final MongoConverter converter;
 
     public List<Blog> getAllBlogs(int pageNumber, int pageSize) {
         Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by(Sort.Direction.DESC,"_id"));
@@ -63,6 +71,20 @@ public class BlogService {
         if(currentBlog.isEmpty())return "Blog not found";
         blogRepository.deleteById(blogId);
         return "Blog deleted";
+    }
+
+    public List<Blog> search(String prompt){
+        MongoDatabase database = mongoClient.getDatabase("blog");
+        MongoCollection<Document> collection = database.getCollection("blogs");
+        List<Blog> blogs = new ArrayList<>();
+        AggregateIterable<Document> result = collection.aggregate(Collections.singletonList(new Document("$search",
+                new Document("index", "default")
+                        .append("wildcard",
+                                new Document("query", prompt + "*")
+                                        .append("path", Arrays.asList("title", "description"))
+                                        .append("allowAnalyzedField", true)))));
+        result.forEach(doc -> blogs.add(converter.read(Blog.class, doc)));
+        return blogs;
     }
 
 }
