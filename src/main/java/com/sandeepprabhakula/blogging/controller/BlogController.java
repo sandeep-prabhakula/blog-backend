@@ -51,4 +51,9 @@ public class BlogController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/search-blogs/{prompt}")
+    public List<Blog> search(@PathVariable("prompt")String prompt){
+        return blogService.search(prompt);
+    }
+
 }
