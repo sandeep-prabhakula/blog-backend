@@ -41,9 +41,9 @@ public class BlogService {
         Optional<Blog> findingBlog = blogRepository.findById(id);
         return findingBlog.orElse(null);
     }
-    public String addNewBlog(Blog blog, String uid) {
-        Optional<User> currentUser = userRepository.findById(uid);
-        if(currentUser.isEmpty() || !currentUser.get().getRoles().equals("ROLE_ADMIN"))return "401 Unauthorized";
+    public String addNewBlog(Blog blog) {
+//        Optional<User> currentUser = userRepository.findById(uid);
+//        if(currentUser.isEmpty() || !currentUser.get().getRoles().equals("ROLE_ADMIN"))return "401 Unauthorized";
         blogRepository.save(blog);
         return "Blog Uploaded Successfully!";
     }

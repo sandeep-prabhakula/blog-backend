@@ -7,6 +7,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.CrossOrigin;
 
+import javax.swing.text.html.Option;
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 
@@ -15,17 +18,17 @@ public class UserService {
     private final UserRepository userRepository;
 
     public String createNewUser(User user){
-        User findingUser = userRepository.findByEmail(user.getEmail());
+        Optional<User> findingUser = userRepository.findByEmail(user.getEmail());
 
-        if(findingUser!=null)return "User already exists";
+        if(findingUser.get()!=null)return "User already exists";
         userRepository.save(user);
         return "Account Creation Successful";
     }
 
     public User login(LoginDTO loginDTO){
-        User findingUser = userRepository.findByEmail(loginDTO.getEmail());
-        if(findingUser==null)return null;
-        if(findingUser.getPassword().equals(loginDTO.getPassword()))return findingUser;
+        Optional<User> findingUser = userRepository.findByEmail(loginDTO.getEmail());
+        if(findingUser.get()==null)return null;
+        if(findingUser.get().getPassword().equals(loginDTO.getPassword()))return findingUser.get();
         return null;
     }
 }
