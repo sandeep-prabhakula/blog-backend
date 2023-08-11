@@ -49,9 +49,7 @@ public class BlogService {
     }
 
 
-    public String updateBlog(Blog blog,String uid){
-        Optional<User> currentUser = userRepository.findById(uid);
-        if(currentUser.isEmpty() || !currentUser.get().getRoles().equals("ROLE_ADMIN"))return "401 Unauthorized";
+    public String updateBlog(Blog blog){
         Optional<Blog> findingBlog = blogRepository.findById(blog.getId());
         if(findingBlog.isEmpty())return "Blog not found";
         Blog currentBlog = findingBlog.get();
@@ -64,9 +62,7 @@ public class BlogService {
         return "Blog Updated";
     }
 
-    public String deleteBlog(String blogId,String uid){
-        Optional<User> currentUser = userRepository.findById(uid);
-        if(currentUser.isEmpty() || !currentUser.get().getRoles().equals("ROLE_ADMIN"))return "401 Unauthorized";
+    public String deleteBlog(String blogId){
         Optional<Blog> currentBlog = blogRepository.findById(blogId);
         if(currentBlog.isEmpty())return "Blog not found";
         blogRepository.deleteById(blogId);

@@ -19,15 +19,15 @@ public class ContactController {
         contactService.addComment(contact);
     }
 
-    @GetMapping("/get-all-comments/{uid}")
+    @GetMapping("/get-all-comments")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public List<Contact> getAllComments(@PathVariable("uid") String uid) {
-        return contactService.getAllComments(uid);
+    public List<Contact> getAllComments() {
+        return contactService.getAllComments();
     }
 
-    @GetMapping("/comment/{id}/{uid}")
+    @GetMapping("/comment/{id}")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public Contact getCommentById(@PathVariable("id") String id, @PathVariable("uid") String uid) {
-        return contactService.getCommentById(id,uid);
+    public Contact getCommentById(@PathVariable("id") String id) {
+        return contactService.getCommentById(id);
     }
 }

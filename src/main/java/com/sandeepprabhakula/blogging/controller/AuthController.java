@@ -1,6 +1,7 @@
 package com.sandeepprabhakula.blogging.controller;
 
 import com.sandeepprabhakula.blogging.data.User;
+import com.sandeepprabhakula.blogging.dto.AuthResponse;
 import com.sandeepprabhakula.blogging.dto.LoginDTO;
 import com.sandeepprabhakula.blogging.service.JwtService;
 import com.sandeepprabhakula.blogging.service.UserService;
@@ -37,11 +38,11 @@ public class AuthController {
 //    }
 
     @PostMapping("/authenticate")
-    public String authenticate(@RequestBody LoginDTO loginDTO){
+    public AuthResponse authenticate(@RequestBody LoginDTO loginDTO){
         Authentication auth = authMan.authenticate(new UsernamePasswordAuthenticationToken(loginDTO.getEmail(),loginDTO.getPassword()));
         if(auth.isAuthenticated())
-            return jwtService.generateToken(loginDTO.getEmail());
+            return new AuthResponse(jwtService.generateToken(loginDTO.getEmail()));
 
-        else return"Invalid User";
+        else return new AuthResponse("InvalidUser");
     }
 }
