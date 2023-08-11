@@ -39,18 +39,18 @@ public class BlogController {
         return ResponseEntity.ok(response);
     }
 
-    @PutMapping("/update-blog/{id}")
+    @PutMapping("/update-blog")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<String> updateBlog(@RequestBody Blog blog, @PathVariable("id")String id){
-        String response = blogService.updateBlog(blog,id);
+    public ResponseEntity<String> updateBlog(@RequestBody Blog blog){
+        String response = blogService.updateBlog(blog);
         if(response.equals("401 Unauthorized"))return new ResponseEntity<>(HttpStatusCode.valueOf(401));
         return ResponseEntity.ok(response);
     }
 
-    @DeleteMapping("/delete-blog/{blogId}/{id}")
+    @DeleteMapping("/delete-blog/{blogId}")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<String> deleteBlog(@PathVariable("blogId")String blogId,@PathVariable("id")String id){
-        String response = blogService.deleteBlog(blogId, id);
+    public ResponseEntity<String> deleteBlog(@PathVariable("blogId")String blogId){
+        String response = blogService.deleteBlog(blogId);
         if(response.equals("401 Unauthorized"))return new ResponseEntity<>(HttpStatusCode.valueOf(401));
         return ResponseEntity.ok(response);
     }

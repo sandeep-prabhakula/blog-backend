@@ -20,15 +20,11 @@ public class ContactService {
         contactRepository.save(contact);
     }
 
-    public List<Contact> getAllComments(String uid){
-        Optional<User> currentUser = userRepository.findById(uid);
-        if(currentUser.isEmpty() || !currentUser.get().getRoles().equals("ROLE_ADMIN"))return new ArrayList<>();
+    public List<Contact> getAllComments(){
         return contactRepository.findAll();
     }
 
-    public Contact getCommentById(String id,String uid){
-        Optional<User> currentUser = userRepository.findById(uid);
-        if(currentUser.isEmpty() || !currentUser.get().getRoles().equals("ROLE_ADMIN"))return new Contact();
+    public Contact getCommentById(String id){
         return contactRepository.findById(id).get();
     }
 }
