@@ -5,9 +5,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.sandeepprabhakula.blogging.data.Blog;
-import com.sandeepprabhakula.blogging.data.User;
 import com.sandeepprabhakula.blogging.repository.BlogRepository;
-import com.sandeepprabhakula.blogging.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.bson.Document;
 import org.springframework.data.domain.Page;
@@ -25,8 +23,6 @@ public class BlogService {
 
     private final BlogRepository blogRepository;
 
-    private final UserRepository userRepository;
-
     private final MongoClient mongoClient;
 
     private final MongoConverter converter;
@@ -42,8 +38,6 @@ public class BlogService {
         return findingBlog.orElse(null);
     }
     public String addNewBlog(Blog blog) {
-//        Optional<User> currentUser = userRepository.findById(uid);
-//        if(currentUser.isEmpty() || !currentUser.get().getRoles().equals("ROLE_ADMIN"))return "401 Unauthorized";
         blogRepository.save(blog);
         return "Blog Uploaded Successfully!";
     }
