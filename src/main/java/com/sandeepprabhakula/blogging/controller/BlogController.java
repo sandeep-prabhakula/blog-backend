@@ -5,6 +5,7 @@ import com.sandeepprabhakula.blogging.service.BlogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,14 +31,16 @@ public class BlogController {
         return blogService.findBlogById(id);
     }
 
-    @PostMapping("/add-blog/{id}")
-    public ResponseEntity<String> addNewBlog(@RequestBody Blog blog, @PathVariable("id")String id){
-        String response = blogService.addNewBlog(blog,id);
+    @PostMapping("/add-blog")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<String> addNewBlog(@RequestBody Blog blog){
+        String response = blogService.addNewBlog(blog);
         if(response.equals("401 Unauthorized"))return new ResponseEntity<>(HttpStatusCode.valueOf(401));
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("/update-blog/{id}")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<String> updateBlog(@RequestBody Blog blog, @PathVariable("id")String id){
         String response = blogService.updateBlog(blog,id);
         if(response.equals("401 Unauthorized"))return new ResponseEntity<>(HttpStatusCode.valueOf(401));
@@ -45,6 +48,7 @@ public class BlogController {
     }
 
     @DeleteMapping("/delete-blog/{blogId}/{id}")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<String> deleteBlog(@PathVariable("blogId")String blogId,@PathVariable("id")String id){
         String response = blogService.deleteBlog(blogId, id);
         if(response.equals("401 Unauthorized"))return new ResponseEntity<>(HttpStatusCode.valueOf(401));
