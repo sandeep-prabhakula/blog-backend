@@ -24,7 +24,5 @@ public class Blog {
     private String postedAt;
 
     private String image;
-
-    private String code;
 }
 
