@@ -51,7 +51,6 @@ public class BlogService {
         currentBlog.setDescription(blog.getDescription());
         currentBlog.setImage(blog.getImage());
         currentBlog.setPostedAt(blog.getPostedAt());
-        currentBlog.setCode(blog.getCode());
         blogRepository.save(currentBlog);
         return "Blog Updated";
     }
