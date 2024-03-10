@@ -12,7 +12,7 @@ public class WakeUpAPIJob {
     @Autowired
     RestTemplate restTemplate;
 
-    @Scheduled(cron = "0 */13 * * * ?")
+    @Scheduled(cron = "0 */12 * * * ?")
     public void getBlog(){
         try{
             String url = "https://codeversechronicles-is8u4959.b4a.run/blog/659981849a56337a2cd1a744";
