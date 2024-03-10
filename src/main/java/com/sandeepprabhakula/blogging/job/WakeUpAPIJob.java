@@ -14,9 +14,12 @@ public class WakeUpAPIJob {
 
     @Scheduled(cron = "0 */13 * * * ?")
     public void getBlog(){
-
-        String url = "https://codeversechronicles-is8u4959.b4a.run/blog/659981849a56337a2cd1a744";
-        String response = restTemplate.getForObject(url,String.class);
-        System.out.println(response + new Date());
+        try{
+            String url = "https://codeversechronicles-is8u4959.b4a.run/blog/659981849a56337a2cd1a744";
+            String response = restTemplate.getForObject(url, String.class);
+            System.out.println("I'm awake " + new Date());
+        }catch (Exception e){
+            System.out.println(e.getMessage() + new Date());
+        }
     }
 }
