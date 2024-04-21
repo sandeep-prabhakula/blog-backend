@@ -37,7 +37,7 @@ public class SecurityConfig {
         httpSecurity
                 .csrf((csrf) -> csrf.disable())
                 .authorizeHttpRequests((authorize) ->
-                        authorize.requestMatchers("/get-all-blogs", "/blog/**", "/search-blogs/**", "/register", "/authenticate", "/add-comment").permitAll()
+                        authorize.requestMatchers("/get-all-blogs", "/blog/**", "/search-blogs/**", "/register", "/authenticate", "/add-comment","/send-mail/**","/reset-password").permitAll()
                 ).authorizeHttpRequests((authorize) -> {
                     authorize.requestMatchers("/get-all-comments/**", "/comment/**", "/add-blog", "/update-blog/**", "/delete-blog/**").authenticated();
 
