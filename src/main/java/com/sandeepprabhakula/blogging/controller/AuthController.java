@@ -8,6 +8,7 @@ import com.sandeepprabhakula.blogging.service.JwtService;
 import com.sandeepprabhakula.blogging.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.mongodb.repository.Query;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -24,29 +25,26 @@ public class AuthController {
     private final UserService userService;
     private final JwtService jwtService;
     private final AuthenticationManager authMan;
+
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody User user){
+    public ResponseEntity<String> register(@RequestBody User user) {
         String response = userService.createNewUser(user);
-        if(response.equals("User already exists"))return new ResponseEntity<>(HttpStatusCode.valueOf(409));
+        if (response.equals("User already exists")) return new ResponseEntity<>(HttpStatusCode.valueOf(409));
         return ResponseEntity.ok(response);
     }
 
-//    @PostMapping("/login")
-//    public User login(@RequestBody LoginDTO loginDTO){
-//        return userService.login(loginDTO);
-//    }
-
     @PostMapping("/authenticate")
-    public AuthResponse authenticate(@RequestBody LoginDTO loginDTO){
-        Authentication auth = authMan.authenticate(new UsernamePasswordAuthenticationToken(loginDTO.getEmail(),loginDTO.getPassword()));
-        if(auth.isAuthenticated())
-            return new AuthResponse(jwtService.generateToken(loginDTO.getEmail()));
-
-        else return new AuthResponse("InvalidUser");
+    public ResponseEntity<?> authenticate(@RequestBody LoginDTO loginDTO) {
+        Authentication auth = authMan.authenticate(new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword()));
+        ResponseEntity<?> response = userService.getUserByEmail(loginDTO.getEmail());
+        Object responseBody = response.getBody();
+        if (auth.isAuthenticated()) {
+            return new ResponseEntity<>(new AuthResponse(responseBody,jwtService.generateToken(loginDTO.getEmail())), HttpStatus.OK);
+        } else return new ResponseEntity<>(responseBody,HttpStatus.UNAUTHORIZED);
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordDTO resetPasswordDTO){
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordDTO resetPasswordDTO) {
         return userService.resetPassword(resetPasswordDTO.getUid(), resetPasswordDTO.getPassword());
     }
 }
