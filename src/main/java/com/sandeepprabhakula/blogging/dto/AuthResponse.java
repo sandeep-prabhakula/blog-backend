@@ -8,5 +8,6 @@ import lombok.*;
 @Setter
 @AllArgsConstructor
 public class AuthResponse {
+    private Object userData;
     private String jwtToken;
 }

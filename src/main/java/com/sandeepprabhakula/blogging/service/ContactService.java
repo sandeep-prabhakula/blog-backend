@@ -11,6 +11,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ContactService {
     private final ContactRepository contactRepository;
+
     public void addComment(Contact contact){
         contactRepository.save(contact);
     }

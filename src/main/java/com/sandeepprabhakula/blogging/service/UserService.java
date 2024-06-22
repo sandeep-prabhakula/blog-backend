@@ -5,7 +5,6 @@ import com.sandeepprabhakula.blogging.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -48,6 +47,24 @@ public class UserService {
             return new ResponseEntity<>(new Exception(e.getMessage()),HttpStatus.BAD_REQUEST);
         }
 
+    }
+
+    public ResponseEntity<?> getUserByEmail(String email){
+        try {
+            Optional<User> optionalUser = userRepository.findByEmail(email);
+            Map<String,Object>responseMap = new HashMap<>();
+
+            if(optionalUser.isEmpty()) {
+                responseMap.put("error","Invalid Credentials");
+                responseMap.put("message","No user found with email "+email);
+                return new ResponseEntity<>(responseMap, HttpStatus.BAD_REQUEST);
+            }
+            else{
+                return new ResponseEntity<>(optionalUser.get(),HttpStatus.OK);
+            }
+        }catch (Exception e){
+            return new ResponseEntity<>(e.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
 }
