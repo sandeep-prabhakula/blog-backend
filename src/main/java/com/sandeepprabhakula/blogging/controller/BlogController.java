@@ -20,7 +20,7 @@ public class BlogController {
 
     private final BlogService blogService;
     private final HttpServletRequest request;
-    private Logger log = LoggerFactory.getLogger(BlogController.class);
+    private final Logger log = LoggerFactory.getLogger(BlogController.class);
 
     @GetMapping("/get-all-blogs")
     public List<Blog> getAllBlogs(
