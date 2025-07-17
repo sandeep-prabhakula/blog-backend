@@ -38,8 +38,8 @@ public class BlogService {
         return findingBlog.orElse(null);
     }
     public String addNewBlog(Blog blog) {
-        blogRepository.save(blog);
-        return "Blog Uploaded Successfully!";
+        Blog response = blogRepository.save(blog);
+        return "Blog uploaded with id: "+response.getId();
     }
 
 
@@ -52,14 +52,14 @@ public class BlogService {
         currentBlog.setImage(blog.getImage());
         currentBlog.setPostedAt(blog.getPostedAt());
         blogRepository.save(currentBlog);
-        return "Blog Updated";
+        return "Blog Updated with ID: "+blog.getId();
     }
 
     public String deleteBlog(String blogId){
         Optional<Blog> currentBlog = blogRepository.findById(blogId);
         if(currentBlog.isEmpty())return "Blog not found";
         blogRepository.deleteById(blogId);
-        return "Blog deleted";
+        return "Blog deleted with ID: "+blogId;
     }
 
     public List<Blog> search(String prompt){
