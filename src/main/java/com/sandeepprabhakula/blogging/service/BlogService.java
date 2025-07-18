@@ -13,7 +13,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.convert.MongoConverter;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
 
@@ -34,19 +36,23 @@ public class BlogService {
     }
 
     public Blog findBlogById(String id){
-        Optional<Blog> findingBlog = blogRepository.findById(id);
-        return findingBlog.orElse(null);
+        return blogRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Blog not found with ID: " + id));
     }
     public String addNewBlog(Blog blog) {
-        Blog response = blogRepository.save(blog);
-        return "Blog uploaded with id: "+response.getId();
+        try{
+            Blog response = blogRepository.save(blog);
+            return "Blog uploaded with id: "+response.getId();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
 
     public String updateBlog(Blog blog){
-        Optional<Blog> findingBlog = blogRepository.findById(blog.getId());
-        if(findingBlog.isEmpty())return "Blog not found";
-        Blog currentBlog = findingBlog.get();
+        Blog currentBlog = blogRepository.findById(blog.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Blog not found with ID: " + blog.getId()));
         currentBlog.setTitle(blog.getTitle());
         currentBlog.setDescription(blog.getDescription());
         currentBlog.setImage(blog.getImage());
@@ -55,11 +61,10 @@ public class BlogService {
         return "Blog Updated with ID: "+blog.getId();
     }
 
-    public String deleteBlog(String blogId){
-        Optional<Blog> currentBlog = blogRepository.findById(blogId);
-        if(currentBlog.isEmpty())return "Blog not found";
+    public void deleteBlog(String blogId){
+        blogRepository.findById(blogId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Blog not found with ID: " + blogId));
         blogRepository.deleteById(blogId);
-        return "Blog deleted with ID: "+blogId;
     }
 
     public List<Blog> search(String prompt){

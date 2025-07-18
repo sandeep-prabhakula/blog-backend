@@ -7,14 +7,16 @@ import com.sandeepprabhakula.blogging.dto.ResetPasswordDTO;
 import com.sandeepprabhakula.blogging.service.JwtService;
 import com.sandeepprabhakula.blogging.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.mongodb.repository.Query;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -28,9 +30,8 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody User user) {
-        String response = userService.createNewUser(user);
-        if (response.equals("User already exists")) return new ResponseEntity<>(HttpStatusCode.valueOf(409));
-        return ResponseEntity.ok(response);
+        userService.createNewUser(user);
+        return ResponseEntity.ok("Account created successfully.");
     }
 
     @PostMapping("/authenticate")
@@ -46,5 +47,12 @@ public class AuthController {
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordDTO resetPasswordDTO) {
         return userService.resetPassword(resetPasswordDTO.getUid(), resetPasswordDTO.getPassword());
+    }
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<Map<String, Object>> handleResponseStatusException(ResponseStatusException e) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("status", e.getStatusCode().value());
+        body.put("message", e.getReason());
+        return new ResponseEntity<>(body, e.getStatusCode());
     }
 }

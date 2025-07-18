@@ -10,8 +10,11 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -43,7 +46,6 @@ public class BlogController {
     public ResponseEntity<String> addNewBlog(@RequestBody Blog blog){
         getIPAddress("add-blog");
         String response = blogService.addNewBlog(blog);
-        if(response.equals("401 Unauthorized"))return new ResponseEntity<>(HttpStatusCode.valueOf(401));
         return ResponseEntity.ok(response);
     }
 
@@ -52,7 +54,6 @@ public class BlogController {
     public ResponseEntity<String> updateBlog(@RequestBody Blog blog){
         getIPAddress("update-blog");
         String response = blogService.updateBlog(blog);
-        if(response.equals("401 Unauthorized"))return new ResponseEntity<>(HttpStatusCode.valueOf(401));
         return ResponseEntity.ok(response);
     }
 
@@ -60,9 +61,8 @@ public class BlogController {
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<String> deleteBlog(@PathVariable("blogId")String blogId){
         getIPAddress("delete-blog");
-        String response = blogService.deleteBlog(blogId);
-        if(response.equals("401 Unauthorized"))return new ResponseEntity<>(HttpStatusCode.valueOf(401));
-        return ResponseEntity.ok(response);
+        blogService.deleteBlog(blogId); // will throw NOT_FOUND if not found
+        return ResponseEntity.ok("Blog deleted with ID: " + blogId);
     }
 
     @GetMapping("/search-blogs/{prompt}")
@@ -77,6 +77,13 @@ public class BlogController {
         }catch (Exception e){
             log.error(e.getMessage());
         }
+    }
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<Map<String, Object>> handleResponseStatusException(ResponseStatusException e) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("status", e.getStatusCode().value());
+        body.put("message", e.getReason());
+        return new ResponseEntity<>(body, e.getStatusCode());
     }
 
 }
