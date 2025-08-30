@@ -45,7 +45,7 @@ public class BlogService {
                 .onErrorMap(throwable -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Blog not found with ID: " + id));
     }
 
-    @CacheEvict(cacheNames = {"paginatedCache"}, key = "0+'_'+5")
+    @CacheEvict(cacheNames = {"paginatedCache"},allEntries = true)
     public Mono<String> addNewBlog(Blog blog) {
         try {
             return blogRepository.save(blog)
@@ -57,7 +57,7 @@ public class BlogService {
 
     }
 
-    @CachePut(cacheNames = {"blogCache"}, key = "#blog.id")
+    @CacheEvict(cacheNames = {"blogCache","paginatedCache"},allEntries = true, key = "#blogId")
     public Mono<String> updateBlog(Blog blog) {
         return blogRepository.findById(blog.getId())
                 .flatMap(existingBlog -> {
@@ -82,7 +82,7 @@ public class BlogService {
                 .onErrorResume(throwable -> Mono.error(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to update blog: " + throwable.getMessage())));
     }
 
-    @CacheEvict(cacheNames = {"blogCache"}, key = "#blogId")
+    @CacheEvict(cacheNames = {"blogCache","paginatedCache"},allEntries = true, key = "#blogId")
     public Mono<String> deleteBlog(String blogId) {
         return blogRepository.findById(blogId)
                 .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Blog not found with ID: " + blogId)))
@@ -98,17 +98,7 @@ public class BlogService {
 
     @Cacheable(cacheNames = {"searchedCache"}, key = "#prompt")
     public Flux<Blog> search(String prompt) {
-//        MongoDatabase database = mongoClient.getDatabase("blog");
-//        MongoCollection<Document> collection = database.getCollection("blogs");
-//        List<Blog> blogs = new ArrayList<>();
-//        AggregateIterable<Document> result = collection.aggregate(Collections.singletonList(new Document("$search",
-//                new Document("index", "default")
-//                        .append("wildcard",
-//                                new Document("query", prompt + "*")
-//                                        .append("path", Arrays.asList("title", "description"))
-//                                        .append("allowAnalyzedField", true)))));
-//        result.forEach(doc -> blogs.add(converter.read(Blog.class, doc)));
-//        return blogs;
+
         Document searchStage = new Document("$search",
                 new Document("index", "default")
                         .append("wildcard",
