@@ -1,19 +1,22 @@
 package com.sandeepprabhakula.blogging.controller;
 
 import com.sandeepprabhakula.blogging.data.Blog;
+import com.sandeepprabhakula.blogging.repository.ReactiveBlogRepository;
 import com.sandeepprabhakula.blogging.service.BlogService;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatusCode;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
+import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -22,62 +25,60 @@ import java.util.Map;
 public class BlogController {
 
     private final BlogService blogService;
-    private final HttpServletRequest request;
+    private final ReactiveBlogRepository blogRepository;
+    private ServerHttpRequest request;
     private final Logger log = LoggerFactory.getLogger(BlogController.class);
 
     @GetMapping("/get-all-blogs")
-    public List<Blog> getAllBlogs(
+    public Flux<Blog> getAllBlogs(
             @RequestParam(name = "pageNumber", defaultValue = "0", required = false) int pageNumber,
             @RequestParam(name = "pageSize", defaultValue = "5",required = false)int pageSize
             ){
-
         getIPAddress("get-all-blogs");
         return blogService.getAllBlogs(pageNumber,pageSize);
     }
 
     @GetMapping("/blog/{id}")
-    public Blog getBlogById(@PathVariable("id")String id){
+    public Mono<Blog> getBlogById(@PathVariable("id")String id){
         getIPAddress("blog");
         return blogService.findBlogById(id);
     }
 
     @PostMapping("/add-blog")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<String> addNewBlog(@RequestBody Blog blog){
+    public ResponseEntity<Mono<String>> addNewBlog(@RequestBody Blog blog){
         getIPAddress("add-blog");
-        String response = blogService.addNewBlog(blog);
+        Mono<String> response = blogService.addNewBlog(blog);
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("/update-blog")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<String> updateBlog(@RequestBody Blog blog){
+    public ResponseEntity<Mono<String>> updateBlog(@RequestBody Blog blog){
         getIPAddress("update-blog");
-        String response = blogService.updateBlog(blog);
+        Mono<String> response = blogService.updateBlog(blog);
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/delete-blog/{blogId}")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<String> deleteBlog(@PathVariable("blogId")String blogId){
+    public ResponseEntity<Mono<String>> deleteBlog(@PathVariable("blogId")String blogId){
         getIPAddress("delete-blog");
-        blogService.deleteBlog(blogId); // will throw NOT_FOUND if not found
-        return ResponseEntity.ok("Blog deleted with ID: " + blogId);
+        Mono<String> res = blogService.deleteBlog(blogId); // will throw NOT_FOUND if not found
+        return new ResponseEntity<>(res, HttpStatus.OK);
     }
 
     @GetMapping("/search-blogs/{prompt}")
-    public List<Blog> search(@PathVariable("prompt")String prompt){
+    public Flux<Blog> search(@PathVariable("prompt")String prompt){
         getIPAddress("search-blogs");
         return blogService.search(prompt);
     }
 
     private void getIPAddress(String endpoint){
         try {
-            log.info("{} accessed from ip addr: {}", endpoint,request.getRemoteAddr());
+            log.info("{} accessed from ip addr: {}", endpoint,request.getRemoteAddress());
         }catch (Exception e){
             log.error(e.getMessage());
         }
     }
+
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<Map<String, Object>> handleResponseStatusException(ResponseStatusException e) {
         Map<String, Object> body = new HashMap<>();

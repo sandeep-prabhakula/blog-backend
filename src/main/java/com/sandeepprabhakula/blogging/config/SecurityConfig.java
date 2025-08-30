@@ -7,78 +7,114 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.http.server.reactive.ServerHttpResponse;
+import org.springframework.security.authentication.ReactiveAuthenticationManager;
+import org.springframework.security.authentication.UserDetailsRepositoryReactiveAuthenticationManager;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.cors.reactive.CorsConfigurationSource;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 
-@EnableWebSecurity
+@EnableWebFluxSecurity
 @Configuration
-@EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final JwtFilter jwtFilter;
     private final TokenBlackListService tokenBlackListService;
     private final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
-    @Bean
-    public UserDetailsService userDetailsService() {
-        return new UserInfoUserDetailsService();
-    }
+    private final ReactiveUserDetailsService userDetailsService;
+
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity
-                .csrf((csrf) -> csrf.disable())
-                .authorizeHttpRequests((authorize) ->
-                        authorize.requestMatchers("/get-all-blogs", "/blog/**", "/search-blogs/**", "/register", "/authenticate", "/add-comment", "/send-mail/**", "/reset-password").permitAll()
-                ).authorizeHttpRequests((authorize) -> {
-                    authorize.requestMatchers("/get-all-comments/**", "/comment/**", "/add-blog", "/update-blog/**", "/delete-blog/**").authenticated();
+    public SecurityWebFilterChain securityFilterChain(ServerHttpSecurity httpSecurity) {
+        return httpSecurity
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .exceptionHandling(exceptionHandling -> exceptionHandling
+                        .authenticationEntryPoint((exchange, ex) -> {
+                            if (exchange.getResponse().isCommitted()) {
+                                return Mono.empty(); // ✅ Skip if response already committed
+                            }
+                            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                            return exchange.getResponse().setComplete();
+                        })
+                        .accessDeniedHandler((exchange, denied) -> {
+                            if (exchange.getResponse().isCommitted()) {
+                                return Mono.empty(); // ✅ Skip if response already committed
+                            }
+                            exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+                            return exchange.getResponse().setComplete();
+                        })
+                )
+                .authorizeExchange(exchanges -> exchanges
+                        // ✅ PUBLIC ENDPOINTS - No authentication required
+                        .pathMatchers(
 
-                })
-                .sessionManagement((sm) ->
-                        sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                                "/get-all-blogs",
+                                "/blog/**",
+                                "/search-blogs/**",
+                                "/register",
+                                "/authenticate",
+                                "/add-comment",
+                                "/send-mail",
+                                "/reset-password"
+                        ).permitAll()
+
+                        // ✅ ADMIN ENDPOINTS - Require ROLE_ADMIN
+                        .pathMatchers(
+                                "/get-all-comments",
+                                "/comment/**",
+                                "/add-blog",
+                                "/update-blog/**",
+                                "/delete-blog/**"
+                        ).hasAuthority("ROLE_ADMIN")
+
+                        // ✅ DEFAULT - All other endpoints require authentication
+                        .anyExchange().authenticated()
+                )
+                .authenticationManager(authenticationProvider())
+                .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
+                .addFilterAt(jwtFilter, SecurityWebFiltersOrder.AUTHENTICATION)
                 .logout(logout -> logout
                         .logoutUrl("/logout")
-                        .logoutSuccessHandler((request, response, authentication) -> {
-
-                            response.setStatus(HttpStatus.OK.value());
-                            response.getWriter().write("Logout successful");
+                        .logoutHandler((webFilterExchange, authentication) -> {
+                            ServerHttpRequest request = webFilterExchange.getExchange().getRequest();
+                            return Mono.justOrEmpty(request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION))
+                                    .flatMap(authHeader -> {
+                                        if (authHeader.startsWith("Bearer ")) {
+                                            String jwt = authHeader.substring(7);
+                                            log.info("Before token blacklisting");
+                                            tokenBlackListService.add(jwt);
+                                            return Mono.empty();
+                                        }
+                                        log.info("Authorization header is missing or invalid");
+                                        return Mono.empty();
+                                    });
                         })
-                        .addLogoutHandler((request, response, authentication) -> {
-                            // Add any cleanup logic here (e.g., token invalidation)
-                            String authHeader = request.getHeader("Authorization");
-                            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                                String jwt = authHeader.substring(7);
-                                // Add token to blacklist or perform other cleanup
-                                log.info("before token blacklisting");
-                                tokenBlackListService.add(jwt);
-                                log.info("after token blacklisting.");
-                            }else{
-                                log.info("authHeader is null");
-                            }
-                        }));
-        httpSecurity.cors(Customizer.withDefaults());
-        return httpSecurity.build();
+                        .logoutSuccessHandler((webFilterExchange, authentication) -> {
+                            ServerHttpResponse response = webFilterExchange.getExchange().getResponse();
+                            response.setStatusCode(HttpStatus.OK);
+                            return response.writeWith(Mono.just(response.bufferFactory()
+                                    .wrap("Logout successful".getBytes())));
+                        })
+                )
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .build();
     }
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -86,24 +122,20 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider dao = new DaoAuthenticationProvider();
-        dao.setUserDetailsService(userDetailsService());
+    public ReactiveAuthenticationManager authenticationProvider() {
+        UserDetailsRepositoryReactiveAuthenticationManager dao = new UserDetailsRepositoryReactiveAuthenticationManager(userDetailsService);
         dao.setPasswordEncoder(passwordEncoder());
         return dao;
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
-        return authConfig.getAuthenticationManager();
-    }
-    @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("https://codeverse-chronicles.vercel.app/")); // ⬅️ Replace with your frontend domain
+        configuration.setAllowedOrigins(List.of("https://codeverse-chronicles.vercel.app"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true); // Important for cookies / Authorization header
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

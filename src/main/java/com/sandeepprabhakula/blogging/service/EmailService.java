@@ -1,7 +1,9 @@
 package com.sandeepprabhakula.blogging.service;
 
 import com.sandeepprabhakula.blogging.data.User;
+import com.sandeepprabhakula.blogging.repository.ReactiveUserRepository;
 import com.sandeepprabhakula.blogging.repository.UserRepository;
+import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -13,6 +15,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -24,35 +27,35 @@ public class EmailService {
     private final JavaMailSender mailSender;
     @Value("${spring.mail.username}")
     private String sender;
-    private final UserRepository userRepository;
+    private final ReactiveUserRepository userRepository;
     private final Logger log = LoggerFactory.getLogger(EmailService.class);
 
-    public ResponseEntity<?> sendPasswordResetEmail(String email) {
-        try {
-            User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-
-            MimeMessage mimeMessage = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
-            helper.setTo(email);
-            String url = "https://codeverse-chronicles.vercel.app/setup-password?id=" + user.getId();
-            String htmlContent = getForgotPasswordHtmlContent(url);
-            helper.setSubject("Password reset request");
-            helper.setText(htmlContent, true); // true = isHtml
-            helper.setFrom(sender);
-            mailSender.send(mimeMessage);
-            log.info("Mail Sent");
-            Map<String, Object> map = new HashMap<>();
-            map.put("status", 200);
-            map.put("message", "Password reset email sent.");
-            return new ResponseEntity<>(map, HttpStatus.OK);
-
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            log.error(e.getMessage());
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        }
-    }
+//    public ResponseEntity<?> sendPasswordResetEmail(String email) {
+//        try {
+//            User user = userRepository.findByEmail(email)
+//                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+//
+//            MimeMessage mimeMessage = mailSender.createMimeMessage();
+//            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+//            helper.setTo(email);
+//            String url = "https://codeverse-chronicles.vercel.app/setup-password?id=" + user.getId();
+//            String htmlContent = getForgotPasswordHtmlContent(url);
+//            helper.setSubject("Password reset request");
+//            helper.setText(htmlContent, true); // true = isHtml
+//            helper.setFrom(sender);
+//            mailSender.send(mimeMessage);
+//            log.info("Mail Sent");
+//            Map<String, Object> map = new HashMap<>();
+//            map.put("status", 200);
+//            map.put("message", "Password reset email sent.");
+//            return new ResponseEntity<>(map, HttpStatus.OK);
+//
+//        } catch (Exception e) {
+//            System.out.println(e.getMessage());
+//            log.error(e.getMessage());
+//            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+//        }
+//    }
 
     private String getForgotPasswordHtmlContent(String resetLink) {
         LocalDate now = LocalDate.now();
@@ -123,5 +126,32 @@ public class EmailService {
                 </body>
                 </html>
                 """.formatted("https://codeverse-chronicles.vercel.app/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Flogo.330cb985.png&w=96&q=75", resetLink, String.valueOf(now.getYear()));
+    }
+
+    public Mono<ResponseEntity<?>> sendPasswordResetEmail(String email) throws MessagingException {
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
+        helper.setTo(email);
+
+        return userRepository.findByEmail(email)
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")))
+                .flatMap(user -> {
+                            String url = "https://codeverse-chronicles.vercel.app/setup-password?id=" + user.getId();
+                            String htmlContent = getForgotPasswordHtmlContent(url);
+                            try {
+                                helper.setSubject("Password reset request");
+                                helper.setText(htmlContent, true); // true = isHtml
+                                helper.setFrom(sender);
+                                mailSender.send(mimeMessage);
+                                return Mono.just(ResponseEntity.ok()
+                                        .body(Map.of("message", "Password reset email sent successfully")));
+                            } catch (MessagingException e) {
+                                throw new RuntimeException(e);
+                            }
+
+
+                        }
+
+                );
     }
 }

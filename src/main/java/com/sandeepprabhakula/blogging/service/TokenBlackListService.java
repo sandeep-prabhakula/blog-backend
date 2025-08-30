@@ -1,8 +1,7 @@
 package com.sandeepprabhakula.blogging.service;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,7 +13,7 @@ public class TokenBlackListService {
         blacklistedTokens.add(token);
     }
 
-    public boolean contains(String token) {
-        return blacklistedTokens.contains(token);
+    public Mono<Boolean> contains(String token) {
+        return Mono.just(blacklistedTokens.contains(token));
     }
 }
