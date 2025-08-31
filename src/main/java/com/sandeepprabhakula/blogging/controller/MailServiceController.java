@@ -20,11 +20,5 @@ public class MailServiceController {
     public Mono<ResponseEntity<?>> sendEmail(@RequestParam("email") String email) throws MessagingException {
         return emailService.sendPasswordResetEmail(email);
     }
-    @ExceptionHandler(ResponseStatusException.class)
-    public ResponseEntity<Map<String, Object>> handleResponseStatusException(ResponseStatusException e) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("status", e.getStatusCode().value());
-        body.put("message", e.getReason());
-        return new ResponseEntity<>(body, e.getStatusCode());
-    }
+
 }

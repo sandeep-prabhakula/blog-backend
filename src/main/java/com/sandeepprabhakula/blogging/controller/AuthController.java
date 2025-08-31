@@ -1,5 +1,6 @@
 package com.sandeepprabhakula.blogging.controller;
 
+import com.sandeepprabhakula.blogging.config.UserInfoUserDetails;
 import com.sandeepprabhakula.blogging.data.User;
 import com.sandeepprabhakula.blogging.dto.AuthResponse;
 import com.sandeepprabhakula.blogging.dto.LoginDTO;
@@ -14,12 +15,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -35,7 +35,6 @@ public class AuthController {
     @PostMapping("/register")
     public Mono<ResponseEntity<Map<String, Object>>> register(@RequestBody User user) {
         return userService.createNewUser(user);
-//        return ResponseEntity.ok("Account created successfully.");
     }
 
     @PostMapping("/authenticate")
@@ -43,12 +42,12 @@ public class AuthController {
         return authMan.authenticate(new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword()))
                 .flatMap(auth -> {
                     if (auth.isAuthenticated()) {
-                        return userService.getUserByEmail(loginDTO.getEmail())
-                                .flatMap(userResponse -> {
-                                    User user = userResponse.getBody();
-                                    String token = jwtService.generateToken(loginDTO.getEmail());
-                                    return Mono.just(ResponseEntity.ok(new AuthResponse(user, token)));
-                                });
+                        UserDetails userDetails = (UserDetails) auth.getPrincipal();
+                        UserInfoUserDetails userInfoDetails = (UserInfoUserDetails) userDetails;
+                        User user = userInfoDetails.getUser();
+                        String token = jwtService.generateToken(loginDTO.getEmail());
+                        return Mono.just(ResponseEntity.ok(new AuthResponse(user, token)));
+
                     }
                     return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
                 })
@@ -69,11 +68,5 @@ public class AuthController {
         return userService.resetPassword(resetPasswordDTO.getUid(), resetPasswordDTO.getPassword());
     }
 
-    @ExceptionHandler(ResponseStatusException.class)
-    public ResponseEntity<Map<String, Object>> handleResponseStatusException(ResponseStatusException e) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("status", e.getStatusCode().value());
-        body.put("message", e.getReason());
-        return new ResponseEntity<>(body, e.getStatusCode());
-    }
+
 }

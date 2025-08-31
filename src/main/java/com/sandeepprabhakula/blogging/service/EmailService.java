@@ -1,8 +1,6 @@
 package com.sandeepprabhakula.blogging.service;
 
-import com.sandeepprabhakula.blogging.data.User;
 import com.sandeepprabhakula.blogging.repository.ReactiveUserRepository;
-import com.sandeepprabhakula.blogging.repository.UserRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +16,6 @@ import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.Map;
 
 @Service
@@ -29,33 +26,6 @@ public class EmailService {
     private String sender;
     private final ReactiveUserRepository userRepository;
     private final Logger log = LoggerFactory.getLogger(EmailService.class);
-
-//    public ResponseEntity<?> sendPasswordResetEmail(String email) {
-//        try {
-//            User user = userRepository.findByEmail(email)
-//                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-//
-//            MimeMessage mimeMessage = mailSender.createMimeMessage();
-//            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true);
-//            helper.setTo(email);
-//            String url = "https://codeverse-chronicles.vercel.app/setup-password?id=" + user.getId();
-//            String htmlContent = getForgotPasswordHtmlContent(url);
-//            helper.setSubject("Password reset request");
-//            helper.setText(htmlContent, true); // true = isHtml
-//            helper.setFrom(sender);
-//            mailSender.send(mimeMessage);
-//            log.info("Mail Sent");
-//            Map<String, Object> map = new HashMap<>();
-//            map.put("status", 200);
-//            map.put("message", "Password reset email sent.");
-//            return new ResponseEntity<>(map, HttpStatus.OK);
-//
-//        } catch (Exception e) {
-//            System.out.println(e.getMessage());
-//            log.error(e.getMessage());
-//            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-//        }
-//    }
 
     private String getForgotPasswordHtmlContent(String resetLink) {
         LocalDate now = LocalDate.now();

@@ -75,11 +75,11 @@ public class UserService {
 
     }
 
-        public Mono<ResponseEntity<User>> getUserByEmail(String email) {
+    public Mono<ResponseEntity<User>> getUserByEmail(String email) {
         return userRepository.findByEmail(email)
-                .flatMap(user-> Mono.just(new ResponseEntity<>(user,HttpStatus.OK)))
+                .flatMap(user -> Mono.just(new ResponseEntity<>(user, HttpStatus.OK)))
                 .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")))
-                .onErrorResume(e-> Mono.just(new ResponseEntity<>(new User(),HttpStatus.BAD_REQUEST)));
+                .onErrorResume(e -> Mono.just(new ResponseEntity<>(new User(), HttpStatus.BAD_REQUEST)));
     }
 
 

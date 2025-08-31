@@ -6,12 +6,10 @@ import com.sandeepprabhakula.blogging.repository.ReactiveBlogRepository;
 import lombok.RequiredArgsConstructor;
 import org.bson.Document;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.*;
-import org.springframework.data.mongodb.core.convert.MongoConverter;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -24,12 +22,9 @@ import java.util.*;
 @RequiredArgsConstructor
 public class BlogService {
 
-    //    private final BlogRepository blogRepository;
     private final ReactiveBlogRepository blogRepository;
-//    private final MongoClient mongoClient;
 
     private final ReactiveMongoTemplate mongoTemplate;
-    private final MongoConverter converter;
 
     @Cacheable(cacheNames = {"paginatedCache"}, key = "#pageNumber+'_'+#pageSize")
     public Flux<Blog> getAllBlogs(long pageNumber, long pageSize) {

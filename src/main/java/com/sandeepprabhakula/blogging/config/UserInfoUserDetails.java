@@ -20,6 +20,8 @@ public class UserInfoUserDetails implements UserDetails {
 
     private List<GrantedAuthority> roles;
 
+    private String strRoles;
+
     public UserInfoUserDetails(User user) {
         name = user.getEmail();
         password = user.getPassword();
@@ -27,6 +29,7 @@ public class UserInfoUserDetails implements UserDetails {
                         user.getRoles().split(",")
                 ).map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
+        strRoles = user.getRoles();
     }
 
     @Override
@@ -62,5 +65,9 @@ public class UserInfoUserDetails implements UserDetails {
     @Override
     public boolean isEnabled() {
         return true;
+    }
+
+    public User getUser(){
+        return new User(name,password,strRoles);
     }
 }
