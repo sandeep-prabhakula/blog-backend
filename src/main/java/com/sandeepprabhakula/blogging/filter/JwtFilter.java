@@ -33,9 +33,7 @@ public class JwtFilter implements WebFilter {
                     String token = authHeader.substring(7);
                     return processToken(token, exchange, chain);
                 })
-                .switchIfEmpty(Mono.defer(() -> {
-                    return chain.filter(exchange);
-                }));
+                .switchIfEmpty(Mono.defer(() -> chain.filter(exchange)));
     }
 
     private Mono<Void> processToken(String token, ServerWebExchange exchange, WebFilterChain chain) {

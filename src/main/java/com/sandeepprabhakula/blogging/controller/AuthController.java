@@ -39,13 +39,13 @@ public class AuthController {
 
     @PostMapping("/authenticate")
     public Mono<ResponseEntity<?>> authenticate(@RequestBody LoginDTO loginDTO) {
-        return authMan.authenticate(new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword()))
+        return authMan.authenticate(new UsernamePasswordAuthenticationToken(loginDTO.email(), loginDTO.password()))
                 .flatMap(auth -> {
                     if (auth.isAuthenticated()) {
                         UserDetails userDetails = (UserDetails) auth.getPrincipal();
                         UserInfoUserDetails userInfoDetails = (UserInfoUserDetails) userDetails;
                         User user = userInfoDetails.getUser();
-                        String token = jwtService.generateToken(loginDTO.getEmail());
+                        String token = jwtService.generateToken(loginDTO.email());
                         return Mono.just(ResponseEntity.ok(new AuthResponse(user, token)));
 
                     }
@@ -65,7 +65,7 @@ public class AuthController {
 
     @PostMapping("/reset-password")
     public Mono<ResponseEntity<Map<String, Object>>> resetPassword(@RequestBody ResetPasswordDTO resetPasswordDTO) {
-        return userService.resetPassword(resetPasswordDTO.getUid(), resetPasswordDTO.getPassword());
+        return userService.resetPassword(resetPasswordDTO.uid(), resetPasswordDTO.password());
     }
 
 
