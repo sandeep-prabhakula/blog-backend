@@ -70,11 +70,13 @@ public class SecurityConfig {
                                 "/authenticate",
                                 "/add-comment",
                                 "/send-mail",
-                                "/reset-password"
+                                "/reset-password",
+                                "/actuator/**"
                         ).permitAll()
 
                         // ✅ ADMIN ENDPOINTS - Require ROLE_ADMIN
                         .pathMatchers(
+
                                 "/get-all-comments",
                                 "/comment/**",
                                 "/add-blog",
