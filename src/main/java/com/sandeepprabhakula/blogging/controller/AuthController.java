@@ -7,6 +7,7 @@ import com.sandeepprabhakula.blogging.dto.LoginDTO;
 import com.sandeepprabhakula.blogging.dto.ResetPasswordDTO;
 import com.sandeepprabhakula.blogging.service.JwtService;
 import com.sandeepprabhakula.blogging.service.UserService;
+import com.sandeepprabhakula.blogging.util.AppUtilities;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +20,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
-
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import java.util.Map;
 
 @RestController
@@ -29,16 +30,22 @@ public class AuthController {
 
     private final UserService userService;
     private final JwtService jwtService;
+    private final AppUtilities appUtilities;
     private final ReactiveAuthenticationManager authMan;
     private final Logger log = LoggerFactory.getLogger(AuthController.class);
 
     @PostMapping("/register")
-    public Mono<ResponseEntity<Map<String, Object>>> register(@RequestBody User user) {
+    public Mono<ResponseEntity<Map<String, Object>>> register(@RequestBody User user, ServerHttpRequest request) {
+        String firstIp = appUtilities.getClientIPAddr(request);
+        log.info("Request from IP: {} to endpoint '/register", firstIp);
         return userService.createNewUser(user);
     }
 
     @PostMapping("/authenticate")
-    public Mono<ResponseEntity<?>> authenticate(@RequestBody LoginDTO loginDTO) {
+    public Mono<ResponseEntity<?>> authenticate(@RequestBody LoginDTO loginDTO,ServerHttpRequest request) {
+        String firstIp = appUtilities.getClientIPAddr(request);
+        log.info("Request from IP: {} to endpoint '/authenticate", firstIp);
+        log.info("Login initiated by: {}",loginDTO.email());
         return authMan.authenticate(new UsernamePasswordAuthenticationToken(loginDTO.email(), loginDTO.password()))
                 .flatMap(auth -> {
                     if (auth.isAuthenticated()) {
@@ -64,7 +71,9 @@ public class AuthController {
     }
 
     @PostMapping("/reset-password")
-    public Mono<ResponseEntity<Map<String, Object>>> resetPassword(@RequestBody ResetPasswordDTO resetPasswordDTO) {
+    public Mono<ResponseEntity<Map<String, Object>>> resetPassword(@RequestBody ResetPasswordDTO resetPasswordDTO,ServerHttpRequest request) {
+        String firstIp = appUtilities.getClientIPAddr(request);
+        log.info("Request from IP: {} to endpoint '/reset-password", firstIp);
         return userService.resetPassword(resetPasswordDTO.uid(), resetPasswordDTO.password());
     }
 
