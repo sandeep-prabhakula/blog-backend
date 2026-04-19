@@ -16,21 +16,23 @@ import reactor.core.publisher.Mono;
 public class BlogController {
 
     private final BlogService blogService;
-
-    @GetMapping("/get-all-blogs")
-    public Flux<Blog> getAllBlogs(
-            @RequestParam(name = "pageNumber", defaultValue = "0", required = false) int pageNumber,
-            @RequestParam(name = "pageSize", defaultValue = "5",required = false)int pageSize,
-            ServerHttpRequest request){
+    private String getClientIPAddr(ServerHttpRequest request){
         String userIp = request.getHeaders().getFirst("X-Forwarded-For");
         if (userIp == null || userIp.isEmpty()) {
             userIp = request.getRemoteAddress() != null
                     ? request.getRemoteAddress().getAddress().getHostAddress()
                     : "unknown";
         }
-        String firstIp = userIp.split(",")[0].trim();
+        return userIp.split(",")[0].trim();
+    }
+    @GetMapping("/get-all-blogs")
+    public Flux<Blog> getAllBlogs(
+            @RequestParam(name = "pageNumber", defaultValue = "0", required = false) int pageNumber,
+            @RequestParam(name = "pageSize", defaultValue = "5",required = false)int pageSize,
+            ServerHttpRequest request){
+        String firstIp = getClientIPAddr(request);
 
-        System.out.println("Request from IP: " + firstIp);
+        System.out.println("Request from IP: " + firstIp+" to endpoint '/get-all-blogs"+"?pageNumber="+pageNumber+"&pageSize"+pageSize+"'.");
         return blogService.getAllBlogs(pageNumber,pageSize);
     }
 
