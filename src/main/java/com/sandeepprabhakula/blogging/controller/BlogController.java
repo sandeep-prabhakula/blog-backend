@@ -5,6 +5,7 @@ import com.sandeepprabhakula.blogging.service.BlogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -19,13 +20,22 @@ public class BlogController {
     @GetMapping("/get-all-blogs")
     public Flux<Blog> getAllBlogs(
             @RequestParam(name = "pageNumber", defaultValue = "0", required = false) int pageNumber,
-            @RequestParam(name = "pageSize", defaultValue = "5",required = false)int pageSize){
+            @RequestParam(name = "pageSize", defaultValue = "5",required = false)int pageSize,
+            ServerHttpRequest request){
+        String userIp = request.getHeaders().getFirst("X-Forwarded-For");
+        if (userIp == null || userIp.isEmpty()) {
+            userIp = request.getRemoteAddress() != null
+                    ? request.getRemoteAddress().getAddress().getHostAddress()
+                    : "unknown";
+        }
+        String firstIp = userIp.split(",")[0].trim();
 
+        System.out.println("Request from IP: " + firstIp);
         return blogService.getAllBlogs(pageNumber,pageSize);
     }
 
     @GetMapping("/blog/{id}")
-    public Mono<Blog> getBlogById(@PathVariable("id")String id){
+    public Mono<Blog> getBlogById(@PathVariable String id){
 
         return blogService.findBlogById(id);
     }
@@ -45,14 +55,14 @@ public class BlogController {
     }
 
     @DeleteMapping("/delete-blog/{blogId}")
-    public ResponseEntity<Mono<String>> deleteBlog(@PathVariable("blogId")String blogId){
+    public ResponseEntity<Mono<String>> deleteBlog(@PathVariable String blogId){
 
         Mono<String> res = blogService.deleteBlog(blogId); // will throw NOT_FOUND if not found
         return new ResponseEntity<>(res, HttpStatus.OK);
     }
 
     @GetMapping("/search-blogs/{prompt}")
-    public Flux<Blog> search(@PathVariable("prompt")String prompt){
+    public Flux<Blog> search(@PathVariable String prompt){
 
         return blogService.search(prompt);
     }
