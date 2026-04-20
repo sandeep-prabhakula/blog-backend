@@ -71,7 +71,8 @@ public class SecurityConfig {
                                 "/add-comment",
                                 "/send-mail",
                                 "/reset-password",
-                                "/actuator/**"
+                                "/actuator/**",
+                                "/get-client-ip"
                         ).permitAll()
 
                         // ✅ ADMIN ENDPOINTS - Require ROLE_ADMIN
